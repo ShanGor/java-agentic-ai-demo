@@ -9,34 +9,29 @@ import org.springframework.ai.chat.messages.ToolResponseMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.model.Media;
 import org.springframework.ai.model.tool.ToolCallingChatOptions;
 import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.ai.model.tool.ToolExecutionResult;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.http.codec.ServerSentEvent;
-import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.*;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
 
 @RestController
 @Slf4j
-public class TestMcpController {
+public class TestAgentController {
     private final ChatModel chatModel;
     private final ChatClient.Builder chatClientBuilder;
     private final ToolCallbackProvider tools;
 
     private final ToolCallingManager toolCallingManager;
 
-    public TestMcpController(ChatModel chatModel,
-                             ChatClient.Builder chatClientBuilder,
-                             ToolCallbackProvider tools) {
+    public TestAgentController(ChatModel chatModel,
+                               ChatClient.Builder chatClientBuilder,
+                               ToolCallbackProvider tools) {
         this.chatModel = chatModel;
         this.chatClientBuilder = chatClientBuilder;
         this.tools = tools;
