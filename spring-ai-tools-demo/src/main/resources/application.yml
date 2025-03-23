@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: mcp-client-demo
+
+  ai:
+    ollama:
+      chat:
+        model: qwen2.5:7b
+      base-url: http://localhost:11434
+    mcp:
+      client:
+        # The McpClientAutoConfiguration got some bug to load remote context twice, now disable it and load it by coding
+        enabled: false
+
+custom:
+  ai:
+    response-timeout: 2m
+  mcp:
+    remote-servers:
+      - name: server1
+        url: http://localhost:10080

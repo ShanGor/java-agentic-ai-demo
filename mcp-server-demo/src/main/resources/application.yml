@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: mcp-server-demo
+
+  # Using spring-ai-mcp-server-webflux-spring-boot-starter
+  ai:
+    mcp:
+      server:
+        name: my-webflux-mcp-server
+        version: 1.0.0
+        type: ASYNC  # Recommended for reactive applications
