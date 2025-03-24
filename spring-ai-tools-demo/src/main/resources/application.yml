@@ -5,7 +5,7 @@ spring:
   ai:
     ollama:
       chat:
-        model: llama3.2-vision # qwen2.5:7b
+        model: qwen2.5:7b # llama3.2-vision
       base-url: http://localhost:11434
     mcp:
       client:
