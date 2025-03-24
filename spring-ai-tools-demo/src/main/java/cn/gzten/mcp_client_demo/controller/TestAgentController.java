@@ -68,7 +68,7 @@ public class TestAgentController {
                 """;
 
         return Flux.create(sink -> Thread.ofVirtual().start(() -> {
-            var chatModel = chatModelConfig.customOllamaChatModel(content -> sink.next(ServerSentEvent.builder(content).event("interim").build()));
+            var chatModel = chatModelConfig.customOllamaChatModel(content -> sink.next(ServerSentEvent.builder(content.message().content()).event("result").build()));
 
             var prompt = new Prompt(myPrompt, chatOptions);
             var resp = chatModel.stream(prompt).blockFirst();
@@ -86,12 +86,9 @@ public class TestAgentController {
 
                 prompt = new Prompt(toolExecutionResult.conversationHistory(), chatOptions);
 
-                resp = chatModel.stream(prompt).blockFirst();
+                resp = chatModel.stream(prompt).blockLast();
             }
 
-            if (resp != null) {
-                sink.next(ServerSentEvent.builder(resp.getResult().getOutput().getText()).event("result").build());
-            }
             sink.complete();
         }));
     }
