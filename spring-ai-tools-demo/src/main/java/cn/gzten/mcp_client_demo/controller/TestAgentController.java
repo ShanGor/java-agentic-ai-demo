@@ -1,5 +1,6 @@
 package cn.gzten.mcp_client_demo.controller;
 
+import cn.gzten.mcp_client_demo.config.CustomModelConfig;
 import cn.gzten.mcp_client_demo.util.IntegrationUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -23,16 +24,16 @@ import java.io.IOException;
 @RestController
 @Slf4j
 public class TestAgentController {
-    private final ChatModel chatModel;
+    private final CustomModelConfig chatModelConfig;
     private final ChatClient.Builder chatClientBuilder;
     private final ToolCallbackProvider tools;
 
     private final ToolCallingManager toolCallingManager;
 
-    public TestAgentController(ChatModel chatModel,
+    public TestAgentController(CustomModelConfig chatModelConfig,
                                ChatClient.Builder chatClientBuilder,
-                               ToolCallbackProvider tools) {
-        this.chatModel = chatModel;
+                               ToolCallbackProvider tools, ChatModel chatModel) {
+        this.chatModelConfig = chatModelConfig;
         this.chatClientBuilder = chatClientBuilder;
         this.tools = tools;
         toolCallingManager = ToolCallingManager.builder().build();
@@ -67,8 +68,10 @@ public class TestAgentController {
                 """;
 
         return Flux.create(sink -> Thread.ofVirtual().start(() -> {
+            var chatModel = chatModelConfig.customOllamaChatModel(content -> sink.next(ServerSentEvent.builder(content).event("interim").build()));
+
             var prompt = new Prompt(myPrompt, chatOptions);
-            var resp = chatModel.call(prompt);
+            var resp = chatModel.stream(prompt).blockFirst();
             while(resp != null && resp.hasToolCalls()) {
                 resp.getResult().getOutput().getToolCalls().forEach(toolCall -> {
                     sink.next(ServerSentEvent.builder("%s: %s".formatted(toolCall.name(), toolCall.arguments())).event("tool-call").build());
@@ -83,7 +86,7 @@ public class TestAgentController {
 
                 prompt = new Prompt(toolExecutionResult.conversationHistory(), chatOptions);
 
-                resp = chatModel.call(prompt);
+                resp = chatModel.stream(prompt).blockFirst();
             }
 
             if (resp != null) {
