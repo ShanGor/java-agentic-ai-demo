@@ -1,18 +1,18 @@
 package cn.gzten.mcp_client_demo.controller;
 
-import cn.gzten.mcp_client_demo.config.CustomModelConfig;
 import cn.gzten.mcp_client_demo.util.IntegrationUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.InMemoryChatMemory;
 import org.springframework.ai.chat.messages.ToolResponseMessage;
-import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.model.tool.ToolCallingChatOptions;
 import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.ai.model.tool.ToolExecutionResult;
+import org.springframework.ai.ollama.CustomOllamaChatModel;
+import org.springframework.ai.ollama.api.OllamaApi;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,20 +20,21 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.*;
 
 import java.io.IOException;
+import java.util.function.Consumer;
 
 @RestController
 @Slf4j
 public class TestAgentController {
-    private final CustomModelConfig chatModelConfig;
+    private final CustomOllamaChatModel chatModel;
     private final ChatClient.Builder chatClientBuilder;
     private final ToolCallbackProvider tools;
 
     private final ToolCallingManager toolCallingManager;
 
-    public TestAgentController(CustomModelConfig chatModelConfig,
+    public TestAgentController(CustomOllamaChatModel chatModel,
                                ChatClient.Builder chatClientBuilder,
-                               ToolCallbackProvider tools, ChatModel chatModel) {
-        this.chatModelConfig = chatModelConfig;
+                               ToolCallbackProvider tools) {
+        this.chatModel = chatModel;
         this.chatClientBuilder = chatClientBuilder;
         this.tools = tools;
         toolCallingManager = ToolCallingManager.builder().build();
@@ -68,10 +69,10 @@ public class TestAgentController {
                 """;
 
         return Flux.create(sink -> Thread.ofVirtual().start(() -> {
-            var chatModel = chatModelConfig.customOllamaChatModel(content -> sink.next(ServerSentEvent.builder(content.message().content()).event("result").build()));
+            Consumer<OllamaApi.ChatResponse> streamObserver = content -> sink.next(ServerSentEvent.builder(content.message().content()).event("result").build());
 
             var prompt = new Prompt(myPrompt, chatOptions);
-            var resp = chatModel.stream(prompt).blockFirst();
+            var resp = chatModel.stream(prompt, streamObserver).blockFirst();
             while(resp != null && resp.hasToolCalls()) {
                 resp.getResult().getOutput().getToolCalls().forEach(toolCall -> {
                     sink.next(ServerSentEvent.builder("%s: %s".formatted(toolCall.name(), toolCall.arguments())).event("tool-call").build());
@@ -86,7 +87,7 @@ public class TestAgentController {
 
                 prompt = new Prompt(toolExecutionResult.conversationHistory(), chatOptions);
 
-                resp = chatModel.stream(prompt).blockLast();
+                resp = chatModel.stream(prompt, streamObserver).blockLast();
             }
 
             sink.complete();

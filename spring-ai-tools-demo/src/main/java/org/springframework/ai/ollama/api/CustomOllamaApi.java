@@ -1,6 +1,5 @@
 package org.springframework.ai.ollama.api;
 
-import lombok.Setter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.http.HttpHeaders;
@@ -22,11 +21,7 @@ public class CustomOllamaApi extends OllamaApi {
 
     private final WebClient webClient;
 
-    @Setter
-    private Consumer<ChatResponse> streamObserver = null;
-
     public CustomOllamaApi(String baseUrl, RestClient.Builder restClientBuilder, WebClient.Builder webClientBuilder) {
-
         super(baseUrl, restClientBuilder, webClientBuilder);
         Consumer<HttpHeaders> defaultHeaders = headers -> {
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -35,7 +30,7 @@ public class CustomOllamaApi extends OllamaApi {
 
         this.webClient = webClientBuilder.baseUrl(baseUrl).defaultHeaders(defaultHeaders).build();
     }
-    public Flux<ChatResponse> streamingChat(ChatRequest chatRequest) {
+    public Flux<ChatResponse> streamingChat(ChatRequest chatRequest, Consumer<ChatResponse> streamObserver) {
         Assert.notNull(chatRequest, REQUEST_BODY_NULL_ERROR);
         Assert.isTrue(chatRequest.stream(), "Request must set the stream property to true.");
 
@@ -83,4 +78,5 @@ public class CustomOllamaApi extends OllamaApi {
                     sink.next(data);
                 });
     }
+
 }
