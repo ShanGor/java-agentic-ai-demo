@@ -22,4 +22,29 @@ public class IntegrationUtils {
         // 创建 Media 对象
         return Media.builder().data(data).mimeType(MediaType.parseMediaType(mimeType)).build();
     }
+
+    /**
+     *
+     * @param dataUrl like "data:image/png;base64"
+     * @param forOllama if for ollama, remove the prefix
+     */
+    public static Media convertDataUrlToMediaRaw(String dataUrl, boolean forOllama) {
+        // 解析 data URL
+        String[] parts = dataUrl.split(",");
+        String metaData = parts[0]; // 例如 "data:image/png;base64"
+        String base64Data = parts[1]; // 实际的 base64 数据
+
+        // 解析 MIME 类型
+        String mimeType = metaData.split(";")[0].split(":")[1]; // 例如 "image/png"
+
+        Object data;
+        if (forOllama) {
+            data = base64Data;
+        } else {
+            data = dataUrl;
+        }
+
+        // 创建 Media 对象
+        return Media.builder().data(data).mimeType(MediaType.parseMediaType(mimeType)).build();
+    }
 }
